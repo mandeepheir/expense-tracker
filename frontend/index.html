@@ -1,105 +1,214 @@
+```html
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-```
-<title>Expense Tracker</title>
+    <title>Expense Tracker</title>
 
-<!-- Bootstrap -->
-<link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet"
->
+    <!-- Bootstrap -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
 
-<!-- Custom CSS -->
-<link rel="stylesheet" href="style.css">
-```
-
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-```
-<div class="container py-5">
+    <div class="container py-5">
 
-    <!-- Header -->
-    <h1 class="text-center mb-2">
-        Expense Tracker
-    </h1>
+        <!-- Header -->
+        <h1 class="text-center mb-2">
+            Expense Tracker
+        </h1>
 
-    <p class="text-center text-muted mb-5">
-        Track and manage your daily expenses
-    </p>
+        <p class="text-center text-muted mb-5">
+            Track and manage your daily expenses
+        </p>
 
 
-    <!-- Add Expense -->
-    <div class="card shadow-sm mx-auto mb-4" style="max-width: 700px;">
+        <!-- Add Expense -->
+        <div class="card shadow-sm mx-auto mb-4" style="max-width: 700px;">
 
-        <div class="card-body p-4">
+            <div class="card-body p-4">
 
-            <h3 class="mb-4">
-                Add Expense
-            </h3>
+                <h3 class="mb-4">
+                    Add Expense
+                </h3>
 
-            <form id="expenseForm">
+                <form id="expenseForm">
 
-                <!-- Expense Name -->
+                    <!-- Expense Name -->
+                    <div class="mb-3">
+
+                        <label for="expenseName" class="form-label">
+                            Expense Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="expenseName"
+                            class="form-control"
+                            placeholder="e.g. Groceries"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Amount -->
+                    <div class="mb-3">
+
+                        <label for="amount" class="form-label">
+                            Amount
+                        </label>
+
+                        <input
+                            type="number"
+                            id="amount"
+                            class="form-control"
+                            placeholder="e.g. 500"
+                            min="0"
+                            step="0.01"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Category -->
+                    <div class="mb-3">
+
+                        <label for="category" class="form-label">
+                            Category
+                        </label>
+
+                        <select
+                            id="category"
+                            class="form-select"
+                            required
+                        >
+
+                            <option value="">
+                                Select category
+                            </option>
+
+                            <option value="Food">
+                                Food
+                            </option>
+
+                            <option value="Transport">
+                                Transport
+                            </option>
+
+                            <option value="Shopping">
+                                Shopping
+                            </option>
+
+                            <option value="Bills">
+                                Bills
+                            </option>
+
+                            <option value="Entertainment">
+                                Entertainment
+                            </option>
+
+                            <option value="Other">
+                                Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Date -->
+                    <div class="mb-4">
+
+                        <label for="date" class="form-label">
+                            Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="date"
+                            class="form-control"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Submit -->
+                    <button
+                        type="submit"
+                        class="btn btn-primary w-100"
+                    >
+                        Add Expense
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+
+        <!-- Search and Filter -->
+        <div
+            class="card shadow-sm mx-auto mb-4"
+            style="max-width: 700px;"
+        >
+
+            <div class="card-body">
+
+                <h5 class="mb-3">
+                    Search & Filter
+                </h5>
+
+
+                <!-- Search -->
                 <div class="mb-3">
 
-                    <label for="expenseName" class="form-label">
-                        Expense Name
+                    <label
+                        for="searchExpense"
+                        class="form-label fw-semibold"
+                    >
+                        Search Expenses
                     </label>
 
                     <input
                         type="text"
-                        id="expenseName"
+                        id="searchExpense"
                         class="form-control"
-                        placeholder="e.g. Groceries"
-                        required
+                        placeholder="Search by expense name or category..."
                     >
 
                 </div>
 
 
-                <!-- Amount -->
-                <div class="mb-3">
+                <!-- Filter -->
+                <div>
 
-                    <label for="amount" class="form-label">
-                        Amount
-                    </label>
-
-                    <input
-                        type="number"
-                        id="amount"
-                        class="form-control"
-                        placeholder="e.g. 500"
-                        min="0"
-                        step="0.01"
-                        required
+                    <label
+                        for="filterCategory"
+                        class="form-label fw-semibold"
                     >
-
-                </div>
-
-
-                <!-- Category -->
-                <div class="mb-3">
-
-                    <label for="category" class="form-label">
-                        Category
+                        Filter by Category
                     </label>
 
                     <select
-                        id="category"
+                        id="filterCategory"
                         class="form-select"
-                        required
                     >
 
-                        <option value="">
-                            Select category
+                        <option value="All">
+                            All Categories
                         </option>
 
                         <option value="Food">
@@ -130,187 +239,176 @@
 
                 </div>
 
+            </div>
 
-                <!-- Date -->
-                <div class="mb-4">
+        </div>
 
-                    <label for="date" class="form-label">
-                        Date
-                    </label>
 
-                    <input
-                        type="date"
-                        id="date"
-                        class="form-control"
-                        required
-                    >
+        <!-- Dashboard -->
+        <div class="row g-4 mx-auto mb-4 dashboard-row">
+
+            <!-- Total Expenses -->
+            <div class="col-md-6 col-lg-3">
+
+                <div class="card shadow-sm dashboard-card h-100">
+
+                    <div class="card-body text-center">
+
+                        <p class="dashboard-title">
+                            Total Expenses
+                        </p>
+
+                        <h3 id="totalExpenses">
+                            ₹0.00
+                        </h3>
+
+                    </div>
 
                 </div>
-
-
-                <!-- Submit -->
-                <button
-                    type="submit"
-                    class="btn btn-primary w-100"
-                >
-                    Add Expense
-                </button>
-
-            </form>
-
-        </div>
-
-    </div>
-
-
-    <!-- Filter -->
-    <div
-        class="card shadow-sm mx-auto mb-4"
-        style="max-width: 700px;"
-    >
-
-        <div class="card-body">
-
-            <label
-                for="filterCategory"
-                class="form-label fw-semibold"
-            >
-                Filter by Category
-            </label>
-
-            <select
-                id="filterCategory"
-                class="form-select"
-            >
-
-                <option value="All">
-                    All Categories
-                </option>
-
-                <option value="Food">
-                    Food
-                </option>
-
-                <option value="Transport">
-                    Transport
-                </option>
-
-                <option value="Shopping">
-                    Shopping
-                </option>
-
-                <option value="Bills">
-                    Bills
-                </option>
-
-                <option value="Entertainment">
-                    Entertainment
-                </option>
-
-                <option value="Other">
-                    Other
-                </option>
-
-            </select>
-
-        </div>
-
-    </div>
-
-
-    <!-- Total -->
-    <div
-        class="card shadow-sm mx-auto mb-4"
-        style="max-width: 700px;"
-    >
-
-        <div class="card-body text-center">
-
-            <h5 class="text-muted mb-2">
-                Total Expenses
-            </h5>
-
-            <h2 id="totalExpenses">
-                ₹0.00
-            </h2>
-
-        </div>
-
-    </div>
-
-
-    <!-- Expense History -->
-    <div
-        class="card shadow-sm mx-auto"
-        style="max-width: 1000px;"
-    >
-
-        <div class="card-body p-4">
-
-            <h3 class="mb-4">
-                Expense History
-            </h3>
-
-
-            <div class="table-responsive">
-
-                <table class="table table-hover">
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Expense
-                            </th>
-
-                            <th>
-                                Amount
-                            </th>
-
-                            <th>
-                                Category
-                            </th>
-
-                            <th>
-                                Date
-                            </th>
-
-                            <th>
-                                Action
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody id="expenseList">
-                    </tbody>
-
-                </table>
 
             </div>
 
 
-            <p
-                id="emptyMessage"
-                class="text-center text-muted"
-            >
-                No expenses found.
-            </p>
+            <!-- Number of Expenses -->
+            <div class="col-md-6 col-lg-3">
+
+                <div class="card shadow-sm dashboard-card h-100">
+
+                    <div class="card-body text-center">
+
+                        <p class="dashboard-title">
+                            Number of Expenses
+                        </p>
+
+                        <h3 id="expenseCount">
+                            0
+                        </h3>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Average Expense -->
+            <div class="col-md-6 col-lg-3">
+
+                <div class="card shadow-sm dashboard-card h-100">
+
+                    <div class="card-body text-center">
+
+                        <p class="dashboard-title">
+                            Average Expense
+                        </p>
+
+                        <h3 id="averageExpense">
+                            ₹0.00
+                        </h3>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Highest Expense -->
+            <div class="col-md-6 col-lg-3">
+
+                <div class="card shadow-sm dashboard-card h-100">
+
+                    <div class="card-body text-center">
+
+                        <p class="dashboard-title">
+                            Highest Expense
+                        </p>
+
+                        <h3 id="highestExpense">
+                            ₹0.00
+                        </h3>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Expense History -->
+        <div
+            class="card shadow-sm mx-auto"
+            style="max-width: 1000px;"
+        >
+
+            <div class="card-body p-4">
+
+                <h3 class="mb-4">
+                    Expense History
+                </h3>
+
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Expense
+                                </th>
+
+                                <th>
+                                    Amount
+                                </th>
+
+                                <th>
+                                    Category
+                                </th>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Action
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="expenseList">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <p
+                    id="emptyMessage"
+                    class="text-center text-muted"
+                >
+                    No expenses found.
+                </p>
+
+            </div>
 
         </div>
 
     </div>
 
-</div>
 
-
-<!-- JavaScript -->
-<script src="script.js"></script>
-```
+    <!-- JavaScript -->
+    <script src="script.js"></script>
 
 </body>
 
 </html>
+
