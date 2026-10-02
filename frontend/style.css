@@ -66,3 +66,33 @@ h1 {
     margin-bottom: 0;
 }
 
+
+/* Category Chart */
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 450px;
+    height: 450px;
+    margin: 0 auto;
+}
+
+.chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+
+/* Monthly Chart */
+
+.monthly-chart-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+}
+
+.monthly-chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+

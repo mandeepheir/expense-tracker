@@ -14,6 +14,9 @@
         rel="stylesheet"
     >
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
@@ -247,7 +250,7 @@
         <!-- Dashboard -->
         <div class="row g-4 mx-auto mb-4 dashboard-row">
 
-            <!-- Total Expenses -->
+            <!-- Total -->
             <div class="col-md-6 col-lg-3">
 
                 <div class="card shadow-sm dashboard-card h-100">
@@ -269,7 +272,7 @@
             </div>
 
 
-            <!-- Number of Expenses -->
+            <!-- Count -->
             <div class="col-md-6 col-lg-3">
 
                 <div class="card shadow-sm dashboard-card h-100">
@@ -291,7 +294,7 @@
             </div>
 
 
-            <!-- Average Expense -->
+            <!-- Average -->
             <div class="col-md-6 col-lg-3">
 
                 <div class="card shadow-sm dashboard-card h-100">
@@ -313,7 +316,7 @@
             </div>
 
 
-            <!-- Highest Expense -->
+            <!-- Highest -->
             <div class="col-md-6 col-lg-3">
 
                 <div class="card shadow-sm dashboard-card h-100">
@@ -329,6 +332,52 @@
                         </h3>
 
                     </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Category Chart -->
+        <div
+            class="card shadow-sm mx-auto mb-4"
+            style="max-width: 700px;"
+        >
+
+            <div class="card-body p-4">
+
+                <h3 class="mb-4 text-center">
+                    Spending by Category
+                </h3>
+
+                <div class="chart-container">
+
+                    <canvas id="expenseChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Monthly Chart -->
+        <div
+            class="card shadow-sm mx-auto mb-4"
+            style="max-width: 1000px;"
+        >
+
+            <div class="card-body p-4">
+
+                <h3 class="mb-4 text-center">
+                    Monthly Spending
+                </h3>
+
+                <div class="monthly-chart-container">
+
+                    <canvas id="monthlyChart"></canvas>
 
                 </div>
 
@@ -411,4 +460,4 @@
 </body>
 
 </html>
-
+```
