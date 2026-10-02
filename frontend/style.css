@@ -84,7 +84,7 @@ h1 {
 }
 
 
-/* Category Chart */
+/* Charts */
 
 .chart-container {
     position: relative;
@@ -98,9 +98,6 @@ h1 {
     width: 100% !important;
     height: 100% !important;
 }
-
-
-/* Monthly Chart */
 
 .monthly-chart-container {
     position: relative;
@@ -118,6 +115,13 @@ h1 {
 
 #exportButton {
     font-weight: 600;
+}
+
+
+/* Edit Button */
+
+.edit-button {
+    margin-right: 5px;
 }
 
 
@@ -163,10 +167,6 @@ body.dark-mode .table th {
 
 body.dark-mode .table td {
     color: #dddddd;
-}
-
-body.dark-mode .table-hover tbody tr:hover {
-    color: #ffffff;
 }
 
 body.dark-mode #themeButton {

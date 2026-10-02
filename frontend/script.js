@@ -31,6 +31,24 @@ const exportButton =
 const themeButton =
     document.getElementById("themeButton");
 
+const formTitle =
+    document.getElementById("formTitle");
+
+const submitButton =
+    document.getElementById("submitButton");
+
+const cancelEditButton =
+    document.getElementById("cancelEditButton");
+
+
+/*
+    This variable stores the ID
+    of the expense currently being edited.
+
+    null means we are adding a new expense.
+*/
+let editingExpenseId = null;
+
 
 // Category chart
 const chartCanvas =
@@ -48,16 +66,21 @@ let monthlyChart = null;
 
 // Load expenses
 let expenses =
-    JSON.parse(localStorage.getItem("expenses")) || [];
+    JSON.parse(
+        localStorage.getItem("expenses")
+    ) || [];
 
 
 // Load saved theme
 const savedTheme =
     localStorage.getItem("theme");
 
+
 if (savedTheme === "dark") {
 
-    document.body.classList.add("dark-mode");
+    document.body.classList.add(
+        "dark-mode"
+    );
 
     themeButton.textContent =
         "☀️ Light Mode";
@@ -79,7 +102,9 @@ themeButton.addEventListener(
     "click",
     function () {
 
-        document.body.classList.toggle("dark-mode");
+        document.body.classList.toggle(
+            "dark-mode"
+        );
 
 
         const darkMode =
@@ -111,13 +136,13 @@ themeButton.addEventListener(
         }
 
 
-        updateChartsForTheme();
+        displayExpenses();
 
     }
 );
 
 
-// Add Expense
+// Add or update expense
 expenseForm.addEventListener(
     "submit",
     function (event) {
@@ -128,7 +153,7 @@ expenseForm.addEventListener(
         const expenseName =
             document.getElementById(
                 "expenseName"
-            ).value;
+            ).value.trim();
 
 
         const amount =
@@ -151,6 +176,53 @@ expenseForm.addEventListener(
             ).value;
 
 
+        // EDIT MODE
+        if (editingExpenseId !== null) {
+
+            expenses =
+                expenses.map(
+                    function (expense) {
+
+                        if (
+                            expense.id ===
+                            editingExpenseId
+                        ) {
+
+                            return {
+
+                                id: expense.id,
+
+                                name: expenseName,
+
+                                amount: amount,
+
+                                category: category,
+
+                                date: date
+
+                            };
+
+                        }
+
+
+                        return expense;
+
+                    }
+                );
+
+
+            saveExpenses();
+
+            cancelEdit();
+
+            displayExpenses();
+
+            return;
+
+        }
+
+
+        // ADD MODE
         const expense = {
 
             id: Date.now(),
@@ -178,7 +250,18 @@ expenseForm.addEventListener(
 );
 
 
-// Filter
+// Cancel edit
+cancelEditButton.addEventListener(
+    "click",
+    function () {
+
+        cancelEdit();
+
+    }
+);
+
+
+// Category filter
 filterCategory.addEventListener(
     "change",
     function () {
@@ -243,7 +326,9 @@ function displayExpenses() {
 
 
     // Category filter
-    if (selectedCategory !== "All") {
+    if (
+        selectedCategory !== "All"
+    ) {
 
         filteredExpenses =
             filteredExpenses.filter(
@@ -261,7 +346,9 @@ function displayExpenses() {
 
 
     // Search filter
-    if (searchText !== "") {
+    if (
+        searchText !== ""
+    ) {
 
         filteredExpenses =
             filteredExpenses.filter(
@@ -300,7 +387,9 @@ function displayExpenses() {
     );
 
 
-    if (filteredExpenses.length === 0) {
+    if (
+        filteredExpenses.length === 0
+    ) {
 
         emptyMessage.style.display =
             "block";
@@ -321,6 +410,7 @@ function displayExpenses() {
                 document.createElement("tr");
 
 
+            // Name
             const nameCell =
                 document.createElement("td");
 
@@ -328,6 +418,7 @@ function displayExpenses() {
                 expense.name;
 
 
+            // Amount
             const amountCell =
                 document.createElement("td");
 
@@ -338,6 +429,7 @@ function displayExpenses() {
                 ).toFixed(2);
 
 
+            // Category
             const categoryCell =
                 document.createElement("td");
 
@@ -345,6 +437,7 @@ function displayExpenses() {
                 expense.category;
 
 
+            // Date
             const dateCell =
                 document.createElement("td");
 
@@ -352,17 +445,44 @@ function displayExpenses() {
                 expense.date;
 
 
+            // Action
             const actionCell =
                 document.createElement("td");
 
 
-            const deleteButton =
-                document.createElement("button");
+            // Edit button
+            const editButton =
+                document.createElement(
+                    "button"
+                );
 
+            editButton.className =
+                "btn btn-warning btn-sm edit-button";
+
+            editButton.textContent =
+                "Edit";
+
+
+            editButton.addEventListener(
+                "click",
+                function () {
+
+                    editExpense(
+                        expense.id
+                    );
+
+                }
+            );
+
+
+            // Delete button
+            const deleteButton =
+                document.createElement(
+                    "button"
+                );
 
             deleteButton.className =
                 "btn btn-danger btn-sm";
-
 
             deleteButton.textContent =
                 "Delete";
@@ -379,6 +499,10 @@ function displayExpenses() {
                 }
             );
 
+
+            actionCell.appendChild(
+                editButton
+            );
 
             actionCell.appendChild(
                 deleteButton
@@ -416,6 +540,120 @@ function displayExpenses() {
 }
 
 
+// Start editing
+function editExpense(id) {
+
+    const expense =
+        expenses.find(
+            function (item) {
+
+                return item.id === id;
+
+            }
+        );
+
+
+    if (!expense) {
+
+        return;
+
+    }
+
+
+    // Store editing ID
+    editingExpenseId =
+        id;
+
+
+    // Put values into form
+    document.getElementById(
+        "expenseName"
+    ).value =
+        expense.name;
+
+
+    document.getElementById(
+        "amount"
+    ).value =
+        expense.amount;
+
+
+    document.getElementById(
+        "category"
+    ).value =
+        expense.category;
+
+
+    document.getElementById(
+        "date"
+    ).value =
+        expense.date;
+
+
+    // Change form appearance
+    formTitle.textContent =
+        "Edit Expense";
+
+
+    submitButton.textContent =
+        "Update Expense";
+
+
+    submitButton.classList.remove(
+        "btn-primary"
+    );
+
+    submitButton.classList.add(
+        "btn-success"
+    );
+
+
+    cancelEditButton.style.display =
+        "block";
+
+
+    // Scroll to form
+    expenseForm.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
+
+}
+
+
+// Cancel edit
+function cancelEdit() {
+
+    editingExpenseId =
+        null;
+
+
+    expenseForm.reset();
+
+
+    formTitle.textContent =
+        "Add Expense";
+
+
+    submitButton.textContent =
+        "Add Expense";
+
+
+    submitButton.classList.remove(
+        "btn-success"
+    );
+
+    submitButton.classList.add(
+        "btn-primary"
+    );
+
+
+    cancelEditButton.style.display =
+        "none";
+
+}
+
+
 // Dashboard
 function updateDashboard(
     filteredExpenses
@@ -429,7 +667,9 @@ function updateDashboard(
         expenseCount;
 
 
-    if (expenseCount === 0) {
+    if (
+        expenseCount === 0
+    ) {
 
         totalExpensesElement.textContent =
             "₹0.00";
@@ -462,7 +702,8 @@ function updateDashboard(
 
 
     const average =
-        total / expenseCount;
+        total /
+        expenseCount;
 
 
     let highest =
@@ -480,9 +721,12 @@ function updateDashboard(
                 );
 
 
-            if (amount > highest) {
+            if (
+                amount > highest
+            ) {
 
-                highest = amount;
+                highest =
+                    amount;
 
             }
 
@@ -588,7 +832,9 @@ function updateCategoryChart(
     ];
 
 
-    if (expenseChart !== null) {
+    if (
+        expenseChart !== null
+    ) {
 
         expenseChart.destroy();
 
@@ -610,7 +856,8 @@ function updateCategoryChart(
 
                         {
 
-                            label: "Expenses",
+                            label:
+                                "Expenses",
 
                             data: data,
 
@@ -702,7 +949,9 @@ function updateMonthlyChart(
 
 
             const monthKey =
-                year + "-" + month;
+                year +
+                "-" +
+                month;
 
 
             if (
@@ -798,7 +1047,9 @@ function updateMonthlyChart(
     );
 
 
-    if (monthlyChart !== null) {
+    if (
+        monthlyChart !== null
+    ) {
 
         monthlyChart.destroy();
 
@@ -890,28 +1141,6 @@ function updateMonthlyChart(
 
                             }
 
-                        },
-
-                        tooltip: {
-
-                            callbacks: {
-
-                                label:
-                                    function (
-                                        context
-                                    ) {
-
-                                        return (
-                                            "Spent: ₹" +
-                                            Number(
-                                                context.raw
-                                            ).toFixed(2)
-                                        );
-
-                                    }
-
-                            }
-
                         }
 
                     }
@@ -943,18 +1172,12 @@ function getChartTextColor() {
 }
 
 
-// Update charts after theme change
-function updateChartsForTheme() {
-
-    displayExpenses();
-
-}
-
-
 // Export CSV
 function exportExpensesToCSV() {
 
-    if (expenses.length === 0) {
+    if (
+        expenses.length === 0
+    ) {
 
         alert(
             "There are no expenses to export."
@@ -1101,8 +1324,23 @@ function escapeCSVValue(
 }
 
 
-// Delete
+// Delete expense
 function deleteExpense(id) {
+
+    /*
+        If the user deletes the expense
+        currently being edited,
+        exit edit mode.
+    */
+
+    if (
+        editingExpenseId === id
+    ) {
+
+        cancelEdit();
+
+    }
+
 
     expenses =
         expenses.filter(
