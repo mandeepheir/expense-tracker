@@ -1,3 +1,5 @@
+const API_URL = "http://localhost:3000/api/expenses";
+
 const expenseForm =
     document.getElementById("expenseForm");
 
@@ -40,13 +42,6 @@ const submitButton =
 const cancelEditButton =
     document.getElementById("cancelEditButton");
 
-
-/*
-    This variable stores the ID
-    of the expense currently being edited.
-
-    null means we are adding a new expense.
-*/
 let editingExpenseId = null;
 
 
@@ -64,11 +59,8 @@ const monthlyChartCanvas =
 let monthlyChart = null;
 
 
-// Load expenses
-let expenses =
-    JSON.parse(
-        localStorage.getItem("expenses")
-    ) || [];
+// Store expenses loaded from backend
+let expenses = [];
 
 
 // Load saved theme
@@ -89,12 +81,11 @@ if (savedTheme === "dark") {
 
     themeButton.textContent =
         "🌙 Dark Mode";
-
 }
 
 
-// Display expenses
-displayExpenses();
+// Load expenses from backend
+loadExpenses();
 
 
 // Theme button
@@ -106,12 +97,10 @@ themeButton.addEventListener(
             "dark-mode"
         );
 
-
         const darkMode =
             document.body.classList.contains(
                 "dark-mode"
             );
-
 
         if (darkMode) {
 
@@ -135,26 +124,58 @@ themeButton.addEventListener(
 
         }
 
-
         displayExpenses();
 
     }
 );
 
 
+// Load expenses from API
+async function loadExpenses() {
+
+    try {
+
+        const response =
+            await fetch(API_URL);
+
+        if (!response.ok) {
+            throw new Error(
+                "Failed to load expenses"
+            );
+        }
+
+        expenses =
+            await response.json();
+
+        displayExpenses();
+
+    } catch (error) {
+
+        console.error(
+            "Error loading expenses:",
+            error
+        );
+
+        alert(
+            "Could not connect to the backend. Make sure the server is running."
+        );
+
+    }
+
+}
+
+
 // Add or update expense
 expenseForm.addEventListener(
     "submit",
-    function (event) {
+    async function (event) {
 
         event.preventDefault();
-
 
         const expenseName =
             document.getElementById(
                 "expenseName"
             ).value.trim();
-
 
         const amount =
             Number(
@@ -163,12 +184,10 @@ expenseForm.addEventListener(
                 ).value
             );
 
-
         const category =
             document.getElementById(
                 "category"
             ).value;
-
 
         const date =
             document.getElementById(
@@ -176,75 +195,156 @@ expenseForm.addEventListener(
             ).value;
 
 
-        // EDIT MODE
-        if (editingExpenseId !== null) {
+        if (expenseName === "") {
 
-            expenses =
-                expenses.map(
-                    function (expense) {
-
-                        if (
-                            expense.id ===
-                            editingExpenseId
-                        ) {
-
-                            return {
-
-                                id: expense.id,
-
-                                name: expenseName,
-
-                                amount: amount,
-
-                                category: category,
-
-                                date: date
-
-                            };
-
-                        }
-
-
-                        return expense;
-
-                    }
-                );
-
-
-            saveExpenses();
-
-            cancelEdit();
-
-            displayExpenses();
+            alert(
+                "Please enter an expense name."
+            );
 
             return;
 
         }
 
 
+        if (amount <= 0) {
+
+            alert(
+                "Please enter a valid amount."
+            );
+
+            return;
+
+        }
+
+
+        // EDIT MODE
+        if (editingExpenseId !== null) {
+
+            try {
+
+                const response =
+                    await fetch(
+                        API_URL +
+                        "/" +
+                        editingExpenseId,
+                        {
+                            method: "PUT",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                name:
+                                    expenseName,
+
+                                amount:
+                                    amount,
+
+                                category:
+                                    category,
+
+                                date:
+                                    date
+                            })
+                        }
+                    );
+
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Failed to update expense"
+                    );
+                }
+
+
+                await loadExpenses();
+
+                cancelEdit();
+
+                return;
+
+            } catch (error) {
+
+                console.error(
+                    "Error updating expense:",
+                    error
+                );
+
+                alert(
+                    "Could not update the expense."
+                );
+
+                return;
+
+            }
+
+        }
+
+
         // ADD MODE
-        const expense = {
+        const expenseData = {
 
-            id: Date.now(),
+            name:
+                expenseName,
 
-            name: expenseName,
+            amount:
+                amount,
 
-            amount: amount,
+            category:
+                category,
 
-            category: category,
-
-            date: date
+            date:
+                date
 
         };
 
 
-        expenses.push(expense);
+        try {
 
-        saveExpenses();
+            const response =
+                await fetch(
+                    API_URL,
+                    {
+                        method: "POST",
 
-        displayExpenses();
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
 
-        expenseForm.reset();
+                        body:
+                            JSON.stringify(
+                                expenseData
+                            )
+                    }
+                );
+
+
+            if (!response.ok) {
+                throw new Error(
+                    "Failed to add expense"
+                );
+            }
+
+
+            await loadExpenses();
+
+            expenseForm.reset();
+
+        } catch (error) {
+
+            console.error(
+                "Error adding expense:",
+                error
+            );
+
+            alert(
+                "Could not add the expense."
+            );
+
+        }
 
     }
 );
@@ -292,17 +392,6 @@ exportButton.addEventListener(
 
     }
 );
-
-
-// Save expenses
-function saveExpenses() {
-
-    localStorage.setItem(
-        "expenses",
-        JSON.stringify(expenses)
-    );
-
-}
 
 
 // Display expenses
@@ -355,15 +444,21 @@ function displayExpenses() {
                 function (expense) {
 
                     const name =
-                        expense.name.toLowerCase();
+                        expense.name
+                            .toLowerCase();
 
                     const category =
-                        expense.category.toLowerCase();
+                        expense.category
+                            .toLowerCase();
 
 
                     return (
-                        name.includes(searchText) ||
-                        category.includes(searchText)
+                        name.includes(
+                            searchText
+                        ) ||
+                        category.includes(
+                            searchText
+                        )
                     );
 
                 }
@@ -407,12 +502,16 @@ function displayExpenses() {
         function (expense) {
 
             const row =
-                document.createElement("tr");
+                document.createElement(
+                    "tr"
+                );
 
 
             // Name
             const nameCell =
-                document.createElement("td");
+                document.createElement(
+                    "td"
+                );
 
             nameCell.textContent =
                 expense.name;
@@ -420,7 +519,9 @@ function displayExpenses() {
 
             // Amount
             const amountCell =
-                document.createElement("td");
+                document.createElement(
+                    "td"
+                );
 
             amountCell.textContent =
                 "₹" +
@@ -431,7 +532,9 @@ function displayExpenses() {
 
             // Category
             const categoryCell =
-                document.createElement("td");
+                document.createElement(
+                    "td"
+                );
 
             categoryCell.textContent =
                 expense.category;
@@ -439,7 +542,9 @@ function displayExpenses() {
 
             // Date
             const dateCell =
-                document.createElement("td");
+                document.createElement(
+                    "td"
+                );
 
             dateCell.textContent =
                 expense.date;
@@ -447,7 +552,9 @@ function displayExpenses() {
 
             // Action
             const actionCell =
-                document.createElement("td");
+                document.createElement(
+                    "td"
+                );
 
 
             // Edit button
@@ -560,7 +667,6 @@ function editExpense(id) {
     }
 
 
-    // Store editing ID
     editingExpenseId =
         id;
 
@@ -1006,11 +1112,15 @@ function updateMonthlyChart(
 
 
             const year =
-                Number(parts[0]);
+                Number(
+                    parts[0]
+                );
 
 
             const month =
-                Number(parts[1]);
+                Number(
+                    parts[1]
+                );
 
 
             const date =
@@ -1325,13 +1435,7 @@ function escapeCSVValue(
 
 
 // Delete expense
-function deleteExpense(id) {
-
-    /*
-        If the user deletes the expense
-        currently being edited,
-        exit edit mode.
-    */
+async function deleteExpense(id) {
 
     if (
         editingExpenseId === id
@@ -1342,20 +1446,52 @@ function deleteExpense(id) {
     }
 
 
-    expenses =
-        expenses.filter(
-            function (expense) {
-
-                return (
-                    expense.id !== id
-                );
-
-            }
+    const confirmed =
+        confirm(
+            "Are you sure you want to delete this expense?"
         );
 
 
-    saveExpenses();
+    if (!confirmed) {
 
-    displayExpenses();
+        return;
+
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_URL +
+                "/" +
+                id,
+                {
+                    method: "DELETE"
+                }
+            );
+
+
+        if (!response.ok) {
+            throw new Error(
+                "Failed to delete expense"
+            );
+        }
+
+
+        await loadExpenses();
+
+    } catch (error) {
+
+        console.error(
+            "Error deleting expense:",
+            error
+        );
+
+        alert(
+            "Could not delete the expense."
+        );
+
+    }
 
 }
