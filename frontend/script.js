@@ -1,4 +1,3 @@
-
 const expenseForm =
     document.getElementById("expenseForm");
 
@@ -26,6 +25,12 @@ const filterCategory =
 const searchExpense =
     document.getElementById("searchExpense");
 
+const exportButton =
+    document.getElementById("exportButton");
+
+const themeButton =
+    document.getElementById("themeButton");
+
 
 // Category chart
 const chartCanvas =
@@ -41,81 +46,169 @@ const monthlyChartCanvas =
 let monthlyChart = null;
 
 
-// Load expenses from localStorage
+// Load expenses
 let expenses =
     JSON.parse(localStorage.getItem("expenses")) || [];
 
 
-// Display expenses when page loads
+// Load saved theme
+const savedTheme =
+    localStorage.getItem("theme");
+
+if (savedTheme === "dark") {
+
+    document.body.classList.add("dark-mode");
+
+    themeButton.textContent =
+        "☀️ Light Mode";
+
+} else {
+
+    themeButton.textContent =
+        "🌙 Dark Mode";
+
+}
+
+
+// Display expenses
 displayExpenses();
 
 
+// Theme button
+themeButton.addEventListener(
+    "click",
+    function () {
+
+        document.body.classList.toggle("dark-mode");
+
+
+        const darkMode =
+            document.body.classList.contains(
+                "dark-mode"
+            );
+
+
+        if (darkMode) {
+
+            themeButton.textContent =
+                "☀️ Light Mode";
+
+            localStorage.setItem(
+                "theme",
+                "dark"
+            );
+
+        } else {
+
+            themeButton.textContent =
+                "🌙 Dark Mode";
+
+            localStorage.setItem(
+                "theme",
+                "light"
+            );
+
+        }
+
+
+        updateChartsForTheme();
+
+    }
+);
+
+
 // Add Expense
-expenseForm.addEventListener("submit", function (event) {
+expenseForm.addEventListener(
+    "submit",
+    function (event) {
 
-    event.preventDefault();
-
-
-    const expenseName =
-        document.getElementById("expenseName").value;
-
-    const amount =
-        Number(document.getElementById("amount").value);
-
-    const category =
-        document.getElementById("category").value;
-
-    const date =
-        document.getElementById("date").value;
+        event.preventDefault();
 
 
-    const expense = {
-
-        id: Date.now(),
-
-        name: expenseName,
-
-        amount: amount,
-
-        category: category,
-
-        date: date
-
-    };
+        const expenseName =
+            document.getElementById(
+                "expenseName"
+            ).value;
 
 
-    // Add expense
-    expenses.push(expense);
+        const amount =
+            Number(
+                document.getElementById(
+                    "amount"
+                ).value
+            );
 
 
-    // Save expenses
-    saveExpenses();
+        const category =
+            document.getElementById(
+                "category"
+            ).value;
 
 
-    // Update display
-    displayExpenses();
+        const date =
+            document.getElementById(
+                "date"
+            ).value;
 
 
-    // Clear form
-    expenseForm.reset();
+        const expense = {
 
-});
+            id: Date.now(),
+
+            name: expenseName,
+
+            amount: amount,
+
+            category: category,
+
+            date: date
+
+        };
 
 
-// Filter by category
-filterCategory.addEventListener("change", function () {
+        expenses.push(expense);
 
-    displayExpenses();
+        saveExpenses();
 
-});
+        displayExpenses();
+
+        expenseForm.reset();
+
+    }
+);
 
 
-// Search expenses
-searchExpense.addEventListener("input", function () {
+// Filter
+filterCategory.addEventListener(
+    "change",
+    function () {
 
-    displayExpenses();
+        displayExpenses();
 
-});
+    }
+);
+
+
+// Search
+searchExpense.addEventListener(
+    "input",
+    function () {
+
+        displayExpenses();
+
+    }
+);
+
+
+// Export
+exportButton.addEventListener(
+    "click",
+    function () {
+
+        exportExpensesToCSV();
+
+    }
+);
 
 
 // Save expenses
@@ -145,19 +238,21 @@ function displayExpenses() {
             .trim();
 
 
-    // Start with all expenses
     let filteredExpenses =
         expenses;
 
 
-    // Filter by category
+    // Category filter
     if (selectedCategory !== "All") {
 
         filteredExpenses =
             filteredExpenses.filter(
                 function (expense) {
 
-                    return expense.category === selectedCategory;
+                    return (
+                        expense.category ===
+                        selectedCategory
+                    );
 
                 }
             );
@@ -165,7 +260,7 @@ function displayExpenses() {
     }
 
 
-    // Filter by search text
+    // Search filter
     if (searchText !== "") {
 
         filteredExpenses =
@@ -190,126 +285,142 @@ function displayExpenses() {
     }
 
 
-    // Update dashboard
-    updateDashboard(filteredExpenses);
+    updateDashboard(
+        filteredExpenses
+    );
 
 
-    // Update category chart
-    updateCategoryChart(filteredExpenses);
+    updateCategoryChart(
+        filteredExpenses
+    );
 
 
-    // Update monthly chart
-    updateMonthlyChart(filteredExpenses);
+    updateMonthlyChart(
+        filteredExpenses
+    );
 
 
-    // No results
     if (filteredExpenses.length === 0) {
 
-        emptyMessage.style.display = "block";
+        emptyMessage.style.display =
+            "block";
 
         return;
 
     }
 
 
-    emptyMessage.style.display = "none";
+    emptyMessage.style.display =
+        "none";
 
 
-    // Display filtered expenses
-    filteredExpenses.forEach(function (expense) {
+    filteredExpenses.forEach(
+        function (expense) {
 
-        const row =
-            document.createElement("tr");
-
-
-        // Expense name
-        const nameCell =
-            document.createElement("td");
-
-        nameCell.textContent =
-            expense.name;
+            const row =
+                document.createElement("tr");
 
 
-        // Amount
-        const amountCell =
-            document.createElement("td");
+            const nameCell =
+                document.createElement("td");
 
-        amountCell.textContent =
-            "₹" + Number(expense.amount).toFixed(2);
-
-
-        // Category
-        const categoryCell =
-            document.createElement("td");
-
-        categoryCell.textContent =
-            expense.category;
+            nameCell.textContent =
+                expense.name;
 
 
-        // Date
-        const dateCell =
-            document.createElement("td");
+            const amountCell =
+                document.createElement("td");
 
-        dateCell.textContent =
-            expense.date;
-
-
-        // Action
-        const actionCell =
-            document.createElement("td");
+            amountCell.textContent =
+                "₹" +
+                Number(
+                    expense.amount
+                ).toFixed(2);
 
 
-        const deleteButton =
-            document.createElement("button");
+            const categoryCell =
+                document.createElement("td");
+
+            categoryCell.textContent =
+                expense.category;
 
 
-        deleteButton.className =
-            "btn btn-danger btn-sm";
+            const dateCell =
+                document.createElement("td");
+
+            dateCell.textContent =
+                expense.date;
 
 
-        deleteButton.textContent =
-            "Delete";
+            const actionCell =
+                document.createElement("td");
 
 
-        deleteButton.addEventListener(
-            "click",
-            function () {
-
-                deleteExpense(expense.id);
-
-            }
-        );
+            const deleteButton =
+                document.createElement("button");
 
 
-        actionCell.appendChild(
-            deleteButton
-        );
+            deleteButton.className =
+                "btn btn-danger btn-sm";
 
 
-        // Add cells
-        row.appendChild(nameCell);
-
-        row.appendChild(amountCell);
-
-        row.appendChild(categoryCell);
-
-        row.appendChild(dateCell);
-
-        row.appendChild(actionCell);
+            deleteButton.textContent =
+                "Delete";
 
 
-        // Add row
-        expenseList.appendChild(row);
+            deleteButton.addEventListener(
+                "click",
+                function () {
 
-    });
+                    deleteExpense(
+                        expense.id
+                    );
+
+                }
+            );
+
+
+            actionCell.appendChild(
+                deleteButton
+            );
+
+
+            row.appendChild(
+                nameCell
+            );
+
+            row.appendChild(
+                amountCell
+            );
+
+            row.appendChild(
+                categoryCell
+            );
+
+            row.appendChild(
+                dateCell
+            );
+
+            row.appendChild(
+                actionCell
+            );
+
+
+            expenseList.appendChild(
+                row
+            );
+
+        }
+    );
 
 }
 
 
-// Update dashboard
-function updateDashboard(filteredExpenses) {
+// Dashboard
+function updateDashboard(
+    filteredExpenses
+) {
 
-    // Number of expenses
     const expenseCount =
         filteredExpenses.length;
 
@@ -318,7 +429,6 @@ function updateDashboard(filteredExpenses) {
         expenseCount;
 
 
-    // No expenses
     if (expenseCount === 0) {
 
         totalExpensesElement.textContent =
@@ -335,7 +445,6 @@ function updateDashboard(filteredExpenses) {
     }
 
 
-    // Calculate total
     let total = 0;
 
 
@@ -343,27 +452,32 @@ function updateDashboard(filteredExpenses) {
         function (expense) {
 
             total =
-                total + Number(expense.amount);
+                total +
+                Number(
+                    expense.amount
+                );
 
         }
     );
 
 
-    // Calculate average
     const average =
         total / expenseCount;
 
 
-    // Find highest expense
     let highest =
-        Number(filteredExpenses[0].amount);
+        Number(
+            filteredExpenses[0].amount
+        );
 
 
     filteredExpenses.forEach(
         function (expense) {
 
             const amount =
-                Number(expense.amount);
+                Number(
+                    expense.amount
+                );
 
 
             if (amount > highest) {
@@ -376,23 +490,27 @@ function updateDashboard(filteredExpenses) {
     );
 
 
-    // Update dashboard
     totalExpensesElement.textContent =
-        "₹" + total.toFixed(2);
+        "₹" +
+        total.toFixed(2);
 
 
     averageExpenseElement.textContent =
-        "₹" + average.toFixed(2);
+        "₹" +
+        average.toFixed(2);
 
 
     highestExpenseElement.textContent =
-        "₹" + highest.toFixed(2);
+        "₹" +
+        highest.toFixed(2);
 
 }
 
 
-// Update category chart
-function updateCategoryChart(filteredExpenses) {
+// Category chart
+function updateCategoryChart(
+    filteredExpenses
+) {
 
     const categoryTotals = {
 
@@ -411,7 +529,6 @@ function updateCategoryChart(filteredExpenses) {
     };
 
 
-    // Calculate category totals
     filteredExpenses.forEach(
         function (expense) {
 
@@ -421,9 +538,15 @@ function updateCategoryChart(filteredExpenses) {
                 )
             ) {
 
-                categoryTotals[expense.category] =
-                    categoryTotals[expense.category] +
-                    Number(expense.amount);
+                categoryTotals[
+                    expense.category
+                ] =
+                    categoryTotals[
+                        expense.category
+                    ] +
+                    Number(
+                        expense.amount
+                    );
 
             }
 
@@ -465,7 +588,6 @@ function updateCategoryChart(filteredExpenses) {
     ];
 
 
-    // Remove old chart
     if (expenseChart !== null) {
 
         expenseChart.destroy();
@@ -473,59 +595,72 @@ function updateCategoryChart(filteredExpenses) {
     }
 
 
-    // Create new chart
     expenseChart =
-        new Chart(chartCanvas, {
+        new Chart(
+            chartCanvas,
+            {
 
-            type: "doughnut",
+                type: "doughnut",
 
-            data: {
+                data: {
 
-                labels: labels,
+                    labels: labels,
 
-                datasets: [
+                    datasets: [
 
-                    {
+                        {
 
-                        label: "Expenses",
+                            label: "Expenses",
 
-                        data: data,
+                            data: data,
 
-                        borderWidth: 1
+                            borderWidth: 1
 
-                    }
+                        }
 
-                ]
+                    ]
 
-            },
+                },
 
-            options: {
+                options: {
 
-                responsive: true,
+                    responsive: true,
 
-                maintainAspectRatio: false,
+                    maintainAspectRatio: false,
 
-                plugins: {
+                    plugins: {
 
-                    legend: {
+                        legend: {
 
-                        position: "bottom"
+                            position: "bottom",
 
-                    },
+                            labels: {
 
-                    tooltip: {
+                                color:
+                                    getChartTextColor()
 
-                        callbacks: {
+                            }
 
-                            label: function (context) {
+                        },
 
-                                return (
-                                    context.label +
-                                    ": ₹" +
-                                    Number(
-                                        context.raw
-                                    ).toFixed(2)
-                                );
+                        tooltip: {
+
+                            callbacks: {
+
+                                label:
+                                    function (
+                                        context
+                                    ) {
+
+                                        return (
+                                            context.label +
+                                            ": ₹" +
+                                            Number(
+                                                context.raw
+                                            ).toFixed(2)
+                                        );
+
+                                    }
 
                             }
 
@@ -536,24 +671,26 @@ function updateCategoryChart(filteredExpenses) {
                 }
 
             }
-
-        });
+        );
 
 }
 
 
-// Update monthly chart
-function updateMonthlyChart(filteredExpenses) {
+// Monthly chart
+function updateMonthlyChart(
+    filteredExpenses
+) {
 
     const monthlyTotals = {};
 
 
-    // Calculate monthly totals
     filteredExpenses.forEach(
         function (expense) {
 
             const date =
-                new Date(expense.date);
+                new Date(
+                    expense.date
+                );
 
 
             const year =
@@ -569,25 +706,36 @@ function updateMonthlyChart(filteredExpenses) {
 
 
             if (
-                monthlyTotals[monthKey] === undefined
+                monthlyTotals[
+                    monthKey
+                ] === undefined
             ) {
 
-                monthlyTotals[monthKey] = 0;
+                monthlyTotals[
+                    monthKey
+                ] = 0;
 
             }
 
 
-            monthlyTotals[monthKey] =
-                monthlyTotals[monthKey] +
-                Number(expense.amount);
+            monthlyTotals[
+                monthKey
+            ] =
+                monthlyTotals[
+                    monthKey
+                ] +
+                Number(
+                    expense.amount
+                );
 
         }
     );
 
 
-    // Sort months
     const sortedMonths =
-        Object.keys(monthlyTotals).sort(
+        Object.keys(
+            monthlyTotals
+        ).sort(
             function (a, b) {
 
                 return a.localeCompare(b);
@@ -617,7 +765,11 @@ function updateMonthlyChart(filteredExpenses) {
 
 
             const date =
-                new Date(year, month, 1);
+                new Date(
+                    year,
+                    month,
+                    1
+                );
 
 
             const monthName =
@@ -630,19 +782,22 @@ function updateMonthlyChart(filteredExpenses) {
 
 
             labels.push(
-                monthName + " " + year
+                monthName +
+                " " +
+                year
             );
 
 
             data.push(
-                monthlyTotals[monthKey]
+                monthlyTotals[
+                    monthKey
+                ]
             );
 
         }
     );
 
 
-    // Remove old chart
     if (monthlyChart !== null) {
 
         monthlyChart.destroy();
@@ -650,78 +805,110 @@ function updateMonthlyChart(filteredExpenses) {
     }
 
 
-    // Create monthly chart
     monthlyChart =
-        new Chart(monthlyChartCanvas, {
+        new Chart(
+            monthlyChartCanvas,
+            {
 
-            type: "bar",
+                type: "bar",
 
-            data: {
+                data: {
 
-                labels: labels,
+                    labels: labels,
 
-                datasets: [
+                    datasets: [
 
-                    {
+                        {
 
-                        label: "Monthly Spending",
+                            label:
+                                "Monthly Spending",
 
-                        data: data,
+                            data: data,
 
-                        borderWidth: 1
+                            borderWidth: 1
 
-                    }
+                        }
 
-                ]
+                    ]
 
-            },
+                },
 
-            options: {
+                options: {
 
-                responsive: true,
+                    responsive: true,
 
-                maintainAspectRatio: false,
+                    maintainAspectRatio: false,
 
-                scales: {
+                    scales: {
 
-                    y: {
+                        x: {
 
-                        beginAtZero: true,
+                            ticks: {
 
-                        ticks: {
+                                color:
+                                    getChartTextColor()
 
-                            callback: function (value) {
+                            }
 
-                                return "₹" + value;
+                        },
+
+                        y: {
+
+                            beginAtZero: true,
+
+                            ticks: {
+
+                                color:
+                                    getChartTextColor(),
+
+                                callback:
+                                    function (
+                                        value
+                                    ) {
+
+                                        return (
+                                            "₹" +
+                                            value
+                                        );
+
+                                    }
 
                             }
 
                         }
 
-                    }
-
-                },
-
-                plugins: {
-
-                    legend: {
-
-                        display: true
-
                     },
 
-                    tooltip: {
+                    plugins: {
 
-                        callbacks: {
+                        legend: {
 
-                            label: function (context) {
+                            labels: {
 
-                                return (
-                                    "Spent: ₹" +
-                                    Number(
-                                        context.raw
-                                    ).toFixed(2)
-                                );
+                                color:
+                                    getChartTextColor()
+
+                            }
+
+                        },
+
+                        tooltip: {
+
+                            callbacks: {
+
+                                label:
+                                    function (
+                                        context
+                                    ) {
+
+                                        return (
+                                            "Spent: ₹" +
+                                            Number(
+                                                context.raw
+                                            ).toFixed(2)
+                                        );
+
+                                    }
 
                             }
 
@@ -732,20 +919,198 @@ function updateMonthlyChart(filteredExpenses) {
                 }
 
             }
-
-        });
+        );
 
 }
 
 
-// Delete expense
+// Chart text color
+function getChartTextColor() {
+
+    if (
+        document.body.classList.contains(
+            "dark-mode"
+        )
+    ) {
+
+        return "#ffffff";
+
+    }
+
+
+    return "#212529";
+
+}
+
+
+// Update charts after theme change
+function updateChartsForTheme() {
+
+    displayExpenses();
+
+}
+
+
+// Export CSV
+function exportExpensesToCSV() {
+
+    if (expenses.length === 0) {
+
+        alert(
+            "There are no expenses to export."
+        );
+
+        return;
+
+    }
+
+
+    let csvContent =
+        "Expense,Amount,Category,Date\n";
+
+
+    expenses.forEach(
+        function (expense) {
+
+            const name =
+                escapeCSVValue(
+                    expense.name
+                );
+
+
+            const amount =
+                Number(
+                    expense.amount
+                ).toFixed(2);
+
+
+            const category =
+                escapeCSVValue(
+                    expense.category
+                );
+
+
+            const date =
+                escapeCSVValue(
+                    expense.date
+                );
+
+
+            csvContent =
+                csvContent +
+                name +
+                "," +
+                amount +
+                "," +
+                category +
+                "," +
+                date +
+                "\n";
+
+        }
+    );
+
+
+    const blob =
+        new Blob(
+            [csvContent],
+            {
+                type:
+                    "text/csv;charset=utf-8;"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    link.setAttribute(
+        "href",
+        url
+    );
+
+
+    link.setAttribute(
+        "download",
+        "expenses.csv"
+    );
+
+
+    link.style.visibility =
+        "hidden";
+
+
+    document.body.appendChild(
+        link
+    );
+
+
+    link.click();
+
+
+    document.body.removeChild(
+        link
+    );
+
+
+    URL.revokeObjectURL(
+        url
+    );
+
+}
+
+
+// CSV protection
+function escapeCSVValue(
+    value
+) {
+
+    const text =
+        String(value);
+
+
+    if (
+        text.includes(",") ||
+        text.includes('"') ||
+        text.includes("\n")
+    ) {
+
+        return (
+            '"' +
+            text.replace(
+                /"/g,
+                '""'
+            ) +
+            '"'
+        );
+
+    }
+
+
+    return text;
+
+}
+
+
+// Delete
 function deleteExpense(id) {
 
     expenses =
         expenses.filter(
             function (expense) {
 
-                return expense.id !== id;
+                return (
+                    expense.id !== id
+                );
 
             }
         );
@@ -756,4 +1121,3 @@ function deleteExpense(id) {
     displayExpenses();
 
 }
-

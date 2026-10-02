@@ -1,7 +1,8 @@
-
 body {
     background-color: #f8f9fa;
+    color: #212529;
     min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1 {
@@ -11,6 +12,8 @@ h1 {
 .card {
     border: none;
     border-radius: 12px;
+    background-color: #ffffff;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .form-control,
@@ -37,6 +40,20 @@ h1 {
 
 #searchExpense:focus {
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+
+/* Header */
+
+.header-section {
+    max-width: 1100px;
+    margin: 0 auto 40px auto;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 20px;
 }
 
 
@@ -96,3 +113,80 @@ h1 {
     height: 100% !important;
 }
 
+
+/* Export */
+
+#exportButton {
+    font-weight: 600;
+}
+
+
+/* Dark Mode */
+
+body.dark-mode {
+    background-color: #121212;
+    color: #f1f1f1;
+}
+
+body.dark-mode .text-muted {
+    color: #adb5bd !important;
+}
+
+body.dark-mode .card {
+    background-color: #1e1e1e;
+    color: #f1f1f1;
+}
+
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+    background-color: #2b2b2b;
+    color: #ffffff;
+    border-color: #555555;
+}
+
+body.dark-mode .form-control::placeholder {
+    color: #aaaaaa;
+}
+
+body.dark-mode .form-select option {
+    background-color: #2b2b2b;
+    color: #ffffff;
+}
+
+body.dark-mode .table {
+    color: #f1f1f1;
+}
+
+body.dark-mode .table th {
+    color: #ffffff;
+}
+
+body.dark-mode .table td {
+    color: #dddddd;
+}
+
+body.dark-mode .table-hover tbody tr:hover {
+    color: #ffffff;
+}
+
+body.dark-mode #themeButton {
+    background-color: #f8f9fa;
+    color: #212529;
+    border-color: #f8f9fa;
+}
+
+
+/* Mobile */
+
+@media (max-width: 576px) {
+
+    .header-section {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .header-section button {
+        width: 100%;
+    }
+
+}
