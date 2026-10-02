@@ -1,166 +1,290 @@
 require("dotenv").config();
 
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
-const { Pool } = require("pg");
+const { Pool, types } = require("pg");
 
-const app = express();
+/* ==========================================================================
+   Config
+   ========================================================================== */
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
-// PostgreSQL connection
+const CATEGORIES = [
+    "Food",
+    "Transport",
+    "Shopping",
+    "Bills",
+    "Entertainment",
+    "Other",
+];
+
+const MAX_NAME_LENGTH = 100;
+const MAX_AMOUNT = 10000000;
+const MAX_ID = 2147483647; // Postgres INTEGER limit
+
+// IMPORTANT: by default `pg` turns DATE columns into JS Date objects, which
+// are then serialised as timestamps and can shift by a day depending on the
+// server's timezone. Return plain "YYYY-MM-DD" strings instead.
+types.setTypeParser(1082, (value) => value); // DATE
+types.setTypeParser(1700, (value) => parseFloat(value)); // NUMERIC -> number
+
+/* ==========================================================================
+   Database
+   ========================================================================== */
+
 const pool = new Pool({
     user: process.env.DB_USER,
     host: process.env.DB_HOST,
     database: process.env.DB_NAME,
     password: process.env.DB_PASSWORD,
-    port: Number(process.env.DB_PORT)
+    port: Number(process.env.DB_PORT) || 5432,
 });
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Prevent an idle-client error from crashing the process
+pool.on("error", (error) => {
+    console.error("Unexpected database error:", error);
+});
 
-// Validate expense data
+/* ==========================================================================
+   App + middleware
+   ========================================================================== */
+
+const app = express();
+
+// CORS_ORIGIN can be a comma-separated list. If unset, all origins are
+// allowed (fine for local development, set it in production).
+const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
+    : null;
+
+app.use(cors(allowedOrigins ? { origin: allowedOrigins } : undefined));
+app.use(express.json({ limit: "10kb" }));
+
+// Serve the frontend from the same server (put it in ./public)
+app.use(express.static(path.join(__dirname, "public")));
+
+// Wraps async route handlers so rejected promises reach the error handler
+const asyncHandler = (handler) => (req, res, next) =>
+    Promise.resolve(handler(req, res, next)).catch(next);
+
+/* ==========================================================================
+   Validation helpers
+   ========================================================================== */
+
+function isValidDate(value) {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return false;
+    }
+
+    // Rejects impossible dates such as 2025-02-31
+    const [year, month, day] = value.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    return (
+        date.getUTCFullYear() === year &&
+        date.getUTCMonth() === month - 1 &&
+        date.getUTCDate() === day
+    );
+}
+
 function validateExpense(req, res, next) {
-    const name = req.body.name;
-    const amount = Number(req.body.amount);
-    const category = req.body.category;
-    const date = req.body.date;
+    const body = req.body || {};
+    const errors = [];
 
-    if (!name || name.trim() === "") {
-        return res.status(400).json({
-            message: "Expense name is required"
-        });
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const amount = Number(body.amount);
+    const category = body.category;
+    const date = body.date;
+
+    if (name === "") {
+        errors.push("Expense name is required");
+    } else if (name.length > MAX_NAME_LENGTH) {
+        errors.push(`Expense name must be at most ${MAX_NAME_LENGTH} characters`);
     }
 
-    if (!amount || amount <= 0) {
-        return res.status(400).json({
-            message: "Amount must be greater than 0"
-        });
+    if (!Number.isFinite(amount) || amount <= 0) {
+        errors.push("Amount must be a number greater than 0");
+    } else if (amount > MAX_AMOUNT) {
+        errors.push(`Amount must not exceed ${MAX_AMOUNT}`);
     }
 
-    if (!category || category.trim() === "") {
-        return res.status(400).json({
-            message: "Category is required"
-        });
+    if (!CATEGORIES.includes(category)) {
+        errors.push(`Category must be one of: ${CATEGORIES.join(", ")}`);
     }
 
-    if (!date) {
-        return res.status(400).json({
-            message: "Date is required"
-        });
+    if (!isValidDate(date)) {
+        errors.push("Date must be a valid date in YYYY-MM-DD format");
     }
+
+    if (errors.length > 0) {
+        return res.status(400).json({ message: errors[0], errors });
+    }
+
+    // Only the cleaned values are used from here on
+    req.expense = {
+        name,
+        amount: Math.round(amount * 100) / 100, // 2 decimal places
+        category,
+        date,
+    };
 
     next();
 }
 
-// Home route
-app.get("/", function (req, res) {
-    res.send("Expense Tracker Backend is running!");
-});
+function validateId(req, res, next) {
+    const id = Number(req.params.id);
 
-// GET all expenses
-app.get("/api/expenses", async function (req, res) {
-    try {
-        const result = await pool.query(
-            "SELECT * FROM expenses ORDER BY date DESC"
-        );
-
-        res.json(result.rows);
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Failed to load expenses"
-        });
+    if (!Number.isInteger(id) || id <= 0 || id > MAX_ID) {
+        return res.status(400).json({ message: "Invalid expense id" });
     }
-});
 
-// POST expense
-app.post("/api/expenses", validateExpense, async function (req, res) {
-    try {
-        const result = await pool.query(
-            "INSERT INTO expenses (name, amount, category, date) VALUES ($1, $2, $3, $4) RETURNING *",
-            [
-                req.body.name.trim(),
-                Number(req.body.amount),
-                req.body.category,
-                req.body.date
-            ]
-        );
+    req.expenseId = id;
+    next();
+}
 
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        console.error(error);
+/* ==========================================================================
+   Routes
+   ========================================================================== */
 
-        res.status(500).json({
-            message: "Failed to add expense"
-        });
-    }
-});
+app.get("/health", asyncHandler(async (req, res) => {
+    await pool.query("SELECT 1");
+    res.json({ status: "ok" });
+}));
 
-// DELETE expense
-app.delete("/api/expenses/:id", async function (req, res) {
-    try {
-        const expenseId = Number(req.params.id);
+// GET /api/expenses?category=Food&from=2025-01-01&to=2025-01-31
+app.get("/api/expenses", asyncHandler(async (req, res) => {
+    const { category, from, to } = req.query;
+    const conditions = [];
+    const values = [];
 
-        const result = await pool.query(
-            "DELETE FROM expenses WHERE id = $1 RETURNING *",
-            [expenseId]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                message: "Expense not found"
-            });
+    if (category !== undefined) {
+        if (!CATEGORIES.includes(category)) {
+            return res.status(400).json({ message: "Invalid category filter" });
         }
-
-        res.json({
-            message: "Expense deleted successfully"
-        });
-    } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Failed to delete expense"
-        });
+        values.push(category);
+        conditions.push(`category = $${values.length}`);
     }
-});
 
-// UPDATE expense
-app.put("/api/expenses/:id", validateExpense, async function (req, res) {
-    try {
-        const expenseId = Number(req.params.id);
-
-        const result = await pool.query(
-            "UPDATE expenses SET name = $1, amount = $2, category = $3, date = $4 WHERE id = $5 RETURNING *",
-            [
-                req.body.name.trim(),
-                Number(req.body.amount),
-                req.body.category,
-                req.body.date,
-                expenseId
-            ]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                message: "Expense not found"
-            });
+    if (from !== undefined) {
+        if (!isValidDate(from)) {
+            return res.status(400).json({ message: "'from' must be YYYY-MM-DD" });
         }
+        values.push(from);
+        conditions.push(`date >= $${values.length}`);
+    }
 
-        res.json(result.rows[0]);
+    if (to !== undefined) {
+        if (!isValidDate(to)) {
+            return res.status(400).json({ message: "'to' must be YYYY-MM-DD" });
+        }
+        values.push(to);
+        conditions.push(`date <= $${values.length}`);
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const result = await pool.query(
+        `SELECT id, name, amount, category, date
+         FROM expenses
+         ${where}
+         ORDER BY date DESC, id DESC`,
+        values
+    );
+
+    res.json(result.rows);
+}));
+
+app.post("/api/expenses", validateExpense, asyncHandler(async (req, res) => {
+    const { name, amount, category, date } = req.expense;
+
+    const result = await pool.query(
+        `INSERT INTO expenses (name, amount, category, date)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, name, amount, category, date`,
+        [name, amount, category, date]
+    );
+
+    res.status(201).json(result.rows[0]);
+}));
+
+app.put("/api/expenses/:id", validateId, validateExpense, asyncHandler(async (req, res) => {
+    const { name, amount, category, date } = req.expense;
+
+    const result = await pool.query(
+        `UPDATE expenses
+         SET name = $1, amount = $2, category = $3, date = $4
+         WHERE id = $5
+         RETURNING id, name, amount, category, date`,
+        [name, amount, category, date, req.expenseId]
+    );
+
+    if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Expense not found" });
+    }
+
+    res.json(result.rows[0]);
+}));
+
+app.delete("/api/expenses/:id", validateId, asyncHandler(async (req, res) => {
+    const result = await pool.query(
+        "DELETE FROM expenses WHERE id = $1",
+        [req.expenseId]
+    );
+
+    if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Expense not found" });
+    }
+
+    res.status(204).end();
+}));
+
+/* ==========================================================================
+   Error handling
+   ========================================================================== */
+
+// Unknown API routes
+app.use("/api", (req, res) => {
+    res.status(404).json({ message: "Route not found" });
+});
+
+// Central error handler (bad JSON, database errors, anything unexpected)
+app.use((error, req, res, next) => {
+    if (error.type === "entity.parse.failed") {
+        return res.status(400).json({ message: "Request body is not valid JSON" });
+    }
+
+    if (error.type === "entity.too.large") {
+        return res.status(413).json({ message: "Request body is too large" });
+    }
+
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong on the server" });
+});
+
+/* ==========================================================================
+   Start + graceful shutdown
+   ========================================================================== */
+
+const server = app.listen(PORT, async () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+
+    try {
+        await pool.query("SELECT 1");
+        console.log("Database connection OK");
     } catch (error) {
-        console.error(error);
-
-        res.status(500).json({
-            message: "Failed to update expense"
-        });
+        console.error("Could not connect to the database:", error.message);
     }
 });
 
-// Start server
-app.listen(PORT, function () {
-    console.log("Server running on http://localhost:" + PORT);
-});
+function shutdown() {
+    console.log("Shutting down...");
+    server.close(async () => {
+        await pool.end();
+        process.exit(0);
+    });
+}
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
